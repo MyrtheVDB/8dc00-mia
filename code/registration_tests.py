@@ -46,7 +46,7 @@ def combining_transforms():
     X = util.test_object(1)
 
     #------------------------------------------------------------------#
-    # TODO: Experiment with combining transformation matrices.
+    X_t = reg.reflect(-1,1).dot(reg.rotate(2)).dot(X)
     #------------------------------------------------------------------#
 
 
@@ -78,7 +78,11 @@ def arbitrary_rotation():
     Xh = util.c2h(X)
 
     #------------------------------------------------------------------#
-    # TODO: TODO: Perform rotation of the test shape around the first vertex
+    Xt= X[:0]
+    T_trans = util.t2h(reg.identity(), Xt)
+    T_rot = reg.rotate(0.25*np.pi)
+    T_trans_inv = np.linalg.inv(T_trans)
+    T = T_trans_inv.dot(T_rot.dot(T_trans))
     #------------------------------------------------------------------#
 
     X_rot = T.dot(Xh)
@@ -135,7 +139,10 @@ def image_transform_test():
 def ls_solve_test():
 
     #------------------------------------------------------------------#
-    # TODO: Test your implementation of the ls_solve definition
+    A = np.array([[3,4],[5,6],[7,8],[17,10]])
+    b = np.array([[1],[2],[3],[4]])
+    w, E = reg.ls_solve(A, b)
+    print(w)
     #------------------------------------------------------------------#
 
 
@@ -190,7 +197,7 @@ def correlation_test():
     assert abs(C1 - 1) < 10e-10, "Correlation function is incorrectly implemented (self correlation test)"
 
     #------------------------------------------------------------------#
-    # TODO: Implement a few more tests of the correlation definition
+    
     #------------------------------------------------------------------#
 
     print('Test successful!')

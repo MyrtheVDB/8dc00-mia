@@ -39,13 +39,11 @@ def rotate(phi):
     # Output:
     # T - transformation matrix
 
-    #------------------------------------------------------------------#
-    T = np.array([[np.cos(phi), -np.sin(phi)],[np.sin(phi), np.cos(phi)]])
-    #------------------------------------------------------------------#
+    T = np.array([[np.cos(phi), -np.sin(phi)],[np.sin(phi),np.cos(phi)]])
 
     return T
-
-
+#
+#
 def shear(cx, cy):
     # 2D shearing matrix.
     # Input:
@@ -54,13 +52,11 @@ def shear(cx, cy):
     # Output:
     # T - transformation matrix
 
-    #------------------------------------------------------------------#
-    T = np.array([[1, cx], [cy, 1]])
-    #------------------------------------------------------------------#
+    T = np.array([[1,cx],[cy,1]])
 
     return T
-
-
+#
+#
 def reflect(rx, ry):
     # 2D reflection matrix.
     # Input:
@@ -74,16 +70,14 @@ def reflect(rx, ry):
         T = 'Invalid input parameter'
         return T
 
-    #------------------------------------------------------------------#
-    T = np.array([[rx, 0], [0, ry]])
-    #------------------------------------------------------------------#
+    T = np.array([[rx,0],[0,ry]])
 
     return T
-
-
-# SECTION 2. Image transformation and least squares fitting
-
-
+#
+#
+## SECTION 2. Image transformation and least squares fitting
+#
+#
 def image_transform(I, Th,  output_shape=None):
     # Image transformation by inverse mapping.
     # Input:
@@ -112,17 +106,15 @@ def image_transform(I, Th,  output_shape=None):
     # convert to homogeneous coordinates
     Xh = util.c2h(X)
 
-    #------------------------------------------------------------------#
     Th_inv = np.linalg.inv(Th)
     
     Xt = Th_inv.dot(Xh)
-    #------------------------------------------------------------------#
 
     It = ndimage.map_coordinates(I, [Xt[1,:], Xt[0,:]], order=1, mode='constant').reshape(I.shape)
 
     return It, Xt
-
-
+#
+#
 def ls_solve(A, b):
     # Least-squares solution to a linear system of equations.
     # Input:
@@ -132,17 +124,19 @@ def ls_solve(A, b):
     # w - least-squares solution to the system of equations
     # E - squared error for the optimal solution
 
-    #------------------------------------------------------------------#
-    A_transp = np.transpose(A)
-    w = np.linalg.inv(A_transp.dot(A)).dot(A_transp).dot(b)
-    #------------------------------------------------------------------#
+    A_trans = np.transpose(A)
+    
+    w = np.linalg.inv(A_trans.dot(A)).dot(A_trans).dot(b)
 
     # compute the error
     E = np.transpose(A.dot(w) - b).dot(A.dot(w) - b)
+    
+    print(w)
+    print(E)
 
     return w, E
-
-
+#
+#
 def ls_affine(X, Xm):
     # Least-squares fitting of an affine transformation.
     # Input:
@@ -152,8 +146,6 @@ def ls_affine(X, Xm):
     # T - affine transformation in homogeneous form.
 
     A = np.transpose(Xm)
-
-    #------------------------------------------------------------------#
     b = np.transpose(X)
     b_x = b[:,0]
     b_y = b[:,1]
@@ -170,120 +162,123 @@ def ls_affine(X, Xm):
     T[1,:3] = w_y_trans
 
     #------------------------------------------------------------------#
+    # TODO: Implement least-squares fitting of an affine transformation.
+    # Use the ls_solve() function that you have previously implemented.
+    #------------------------------------------------------------------#
 
     return T
-
-
-# SECTION 3. Image simmilarity metrics
-
-
-def correlation(I, J):
-    # Compute the normalized cross-correlation between two images.
-    # Input:
-    # I, J - input images
-    # Output:
-    # CC - normalized cross-correlation
-    # it's always good to do some parameter checks
-
-    if I.shape != J.shape:
-        raise AssertionError("The inputs must be the same size.")
-
-    u = I.reshape((I.shape[0]*I.shape[1],1))
-    v = J.reshape((J.shape[0]*J.shape[1],1))
-
-    # subtract the mean
-    u = u - u.mean(keepdims=True)
-    v = v - v.mean(keepdims=True)
-
-    #------------------------------------------------------------------#
-    u_transp = np.transpose(u)
-    v_transp = np.transpose(v)
-    numerator = u_transp*v
-    denominator = np.sqrt(u_transp*u)*np.sqrt(v_transp*v)
-    CC = numerator/denominator
-    #------------------------------------------------------------------#
-
-    return CC
-
-
-def joint_histogram(I, J, num_bins=16, minmax_range=None):
-    # Compute the joint histogram of two signals.
-    # Input:
-    # I, J - input images
-    # num_bins: number of bins of the joint histogram (default: 16)
-    # range - range of the values of the signals (defaul: min and max
-    # of the inputs)
-    # Output:
-    # p - joint histogram
-
-    if I.shape != J.shape:
-        raise AssertionError("The inputs must be the same size.")
-
-    # make sure the inputs are column-vectors of type double (highest
-    # precision)
-    I = I.reshape((I.shape[0]*I.shape[1],1)).astype(float)
-    J = J.reshape((J.shape[0]*J.shape[1],1)).astype(float)
-
-    # if the range is not specified use the min and max values of the
-    # inputs
-    if minmax_range is None:
-        minmax_range = np.array([min(min(I),min(J)), max(max(I),max(J))])
-
-    # this will normalize the inputs to the [0 1] range
-    I = (I-minmax_range[0]) / (minmax_range[1]-minmax_range[0])
-    J = (J-minmax_range[0]) / (minmax_range[1]-minmax_range[0])
-
-    # and this will make them integers in the [0 (num_bins-1)] range
-    I = np.round(I*(num_bins-1)).astype(int)
-    J = np.round(J*(num_bins-1)).astype(int)
-
-    n = I.shape[0]
-    hist_size = np.array([num_bins,num_bins])
-
-    # initialize the joint histogram to all zeros
-    p = np.zeros(hist_size)
-
-    for k in range(n):
-        p[I[k], J[k]] = p[I[k], J[k]] + 1
-
-    #------------------------------------------------------------------#
-    p = p/((hist_size[0])(hist_size[1]))
-    #------------------------------------------------------------------#
-
-    return p
-
-
-def mutual_information(p):
-    # Compute the mutual information from a joint histogram.
-    # Input:
-    # p - joint histogram
-    # Output:
-    # MI - mutual information in nat units
-    # a very small positive number
-
-    EPSILON = 10e-10
-
-    # add a small positive number to the joint histogram to avoid
-    # numerical problems (such as division by zero)
-    p += EPSILON
-
-    # we can compute the marginal histograms from the joint histogram
-    p_I = np.sum(p, axis=1)
-    p_I = p_I.reshape(-1, 1)
-    p_J = np.sum(p, axis=0)
-    p_J = p_J.reshape(1, -1)
-
-    #------------------------------------------------------------------#
-    # TODO: Implement the computation of the mutual information from p,
-    # p_I and p_J. This can be done with a single line of code, but you
-    # can use a for-loop instead.
-    # HINT: p_I is a column-vector and p_J is a row-vector so their
-    # product is a matrix. You can also use the sum() function here.
-    #------------------------------------------------------------------#
-
-    return MI
-
-
+#
+#
+## SECTION 3. Image simmilarity metrics
+#
+#
+#def correlation(I, J):
+#    # Compute the normalized cross-correlation between two images.
+#    # Input:
+#    # I, J - input images
+#    # Output:
+#    # CC - normalized cross-correlation
+#    # it's always good to do some parameter checks
+#
+#    if I.shape != J.shape:
+#        raise AssertionError("The inputs must be the same size.")
+#
+#    u = I.reshape((I.shape[0]*I.shape[1],1))
+#    v = J.reshape((J.shape[0]*J.shape[1],1))
+#
+#    # subtract the mean
+#    u = u - u.mean(keepdims=True)
+#    v = v - v.mean(keepdims=True)
+#
+#    #------------------------------------------------------------------#
+#    # TODO: Implement the computation of the normalized cross-correlation.
+#    # This can be done with a single line of code, but you can use for-loops instead.
+#    #------------------------------------------------------------------#
+#
+#    return CC
+#
+#
+#def joint_histogram(I, J, num_bins=16, minmax_range=None):
+#    # Compute the joint histogram of two signals.
+#    # Input:
+#    # I, J - input images
+#    # num_bins: number of bins of the joint histogram (default: 16)
+#    # range - range of the values of the signals (defaul: min and max
+#    # of the inputs)
+#    # Output:
+#    # p - joint histogram
+#
+#    if I.shape != J.shape:
+#        raise AssertionError("The inputs must be the same size.")
+#
+#    # make sure the inputs are column-vectors of type double (highest
+#    # precision)
+#    I = I.reshape((I.shape[0]*I.shape[1],1)).astype(float)
+#    J = J.reshape((J.shape[0]*J.shape[1],1)).astype(float)
+#
+#    # if the range is not specified use the min and max values of the
+#    # inputs
+#    if minmax_range is None:
+#        minmax_range = np.array([min(min(I),min(J)), max(max(I),max(J))])
+#
+#    # this will normalize the inputs to the [0 1] range
+#    I = (I-minmax_range[0]) / (minmax_range[1]-minmax_range[0])
+#    J = (J-minmax_range[0]) / (minmax_range[1]-minmax_range[0])
+#
+#    # and this will make them integers in the [0 (num_bins-1)] range
+#    I = np.round(I*(num_bins-1)).astype(int)
+#    J = np.round(J*(num_bins-1)).astype(int)
+#
+#    n = I.shape[0]
+#    hist_size = np.array([num_bins,num_bins])
+#
+#    # initialize the joint histogram to all zeros
+#    p = np.zeros(hist_size)
+#
+#    for k in range(n):
+#        p[I[k], J[k]] = p[I[k], J[k]] + 1
+#
+#    #------------------------------------------------------------------#
+#    # TODO: At this point, p contains the counts of cooccuring
+#    # intensities in the two images. You need to implement one final
+#    # step to make p take the form of a probability mass function
+#    # (p.m.f.).
+#    #------------------------------------------------------------------#
+#
+#    return p
+#
+#
+#def mutual_information(p):
+#    # Compute the mutual information from a joint histogram.
+#    # Input:
+#    # p - joint histogram
+#    # Output:
+#    # MI - mutual information in nat units
+#    # a very small positive number
+#
+#    EPSILON = 10e-10
+#
+#    # add a small positive number to the joint histogram to avoid
+#    # numerical problems (such as division by zero)
+#    p += EPSILON
+#
+#    # we can compute the marginal histograms from the joint histogram
+#    p_I = np.sum(p, axis=1)
+#    p_I = p_I.reshape(-1, 1)
+#    p_J = np.sum(p, axis=0)
+#    p_J = p_J.reshape(1, -1)
+#
+#    #------------------------------------------------------------------#
+#    # TODO: Implement the computation of the mutual information from p,
+#    # p_I and p_J. This can be done with a single line of code, but you
+#    # can use a for-loop instead.
+#    # HINT: p_I is a column-vector and p_J is a row-vector so their
+#    # product is a matrix. You can also use the sum() function here.
+#    #------------------------------------------------------------------#
+#
+#    return MI
+#
+#
 #def mutual_information_e(p):
 #    # Compute the mutual information from a joint histogram.
 #    # Alternative implementation via computation of entropy.

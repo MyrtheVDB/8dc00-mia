@@ -44,7 +44,9 @@ def t2h(T, t):
     # Th - homogeneous transformation matrix
 
     #------------------------------------------------------------------#
-    # TODO: Implement conversion of a transformation matrix and a translation vector to homogeneous transformation matrix.
+    Th = np.zeros((3,3));
+    Th[:2,:2] = [T[0],T[1]]
+    Th[:,-1] = [t[0], t[1], 1]
     #------------------------------------------------------------------#
 
 
