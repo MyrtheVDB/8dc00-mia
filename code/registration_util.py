@@ -39,7 +39,7 @@ def t2h(T, t):
     # Convert a 2D transformation matrix to homogeneous form.
     # Input:
     # T - 2D transformation matrix
-    # Xt - 2D translation vector
+    # t - 2D translation vector
     # Output:
     # Th - homogeneous transformation matrix
 
@@ -70,7 +70,16 @@ def my_cpselect(I_path, Im_path):
     # Xm - control points in the moving image
 
     #------------------------------------------------------------------#
-    # TODO: Call cpselect and modify the returned point coordinates.
+    controlpointlist = cpselect(I_path, Im_path)
+    l = len(controlpointlist)
+    X = np.zeros((2,l))
+    Xm = np.zeros((2,l))
+    for i in range(l):
+        coordinates = list(controlpointlist[i].values())
+        X[i] = coordinates[1:3]
+        Xm[i] = coordinates[3:5]
+    X = np.transpose(X)
+    Xm = np.transpose(Xm)
     #------------------------------------------------------------------#
 
     return X, Xm

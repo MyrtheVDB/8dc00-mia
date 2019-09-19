@@ -247,7 +247,7 @@ def joint_histogram(I, J, num_bins=16, minmax_range=None):
         p[I[k], J[k]] = p[I[k], J[k]] + 1
 
     #------------------------------------------------------------------#
-    p = p/((hist_size[0])(hist_size[1]))
+    p = p/((num_bins)*(num_bins))
     #------------------------------------------------------------------#
 
     return p
@@ -274,150 +274,178 @@ def mutual_information(p):
     p_J = p_J.reshape(1, -1)
 
     #------------------------------------------------------------------#
-    # TODO: Implement the computation of the mutual information from p,
-    # p_I and p_J. This can be done with a single line of code, but you
-    # can use a for-loop instead.
-    # HINT: p_I is a column-vector and p_J is a row-vector so their
-    # product is a matrix. You can also use the sum() function here.
+    MI = ( np.sum(p * (np.log( p/(p_I * p_J) ))))
     #------------------------------------------------------------------#
 
     return MI
 
 
-#def mutual_information_e(p):
-#    # Compute the mutual information from a joint histogram.
-#    # Alternative implementation via computation of entropy.
-#    # Input:
-#    # p - joint histogram
-#    # Output:
-#    # MI - mutual information in nat units
-#    # a very small positive number
-#
-#    EPSILON = 10e-10
-#
-#    # add a small positive number to the joint histogram to avoid
-#    # numerical problems (such as division by zero)
-#    p += EPSILON
-#
-#    # we can compute the marginal histograms from the joint histogram
-#    p_I = np.sum(p, axis=1)
-#    p_I = p_I.reshape(-1, 1)
-#    p_J = np.sum(p, axis=0)
-#    p_J = p_J.reshape(1, -1)
-#
-#    #------------------------------------------------------------------#
-#    # TODO: Implement the computation of the mutual information via
-#    # computation of entropy.
-#    #------------------------------------------------------------------#
-#
-#    return MI
-#
-#
-## SECTION 4. Towards intensity-based image registration
-#
-#
-#def ngradient(fun, x, h=1e-3):
-#    # Computes the derivative of a function with numerical differentiation.
-#    # Input:
-#    # fun - function for which the gradient is computed
-#    # x - vector of parameter values at which to compute the gradient
-#    # h - a small positive number used in the finite difference formula
-#    # Output:
-#    # g - vector of partial derivatives (gradient) of fun
-#
-#    #------------------------------------------------------------------#
-#    # TODO: Implement the  computation of the partial derivatives of
-#    # the function at x with numerical differentiation.
-#    # g[k] should store the partial derivative w.r.t. the k-th parameter
-#    #------------------------------------------------------------------#
-#
-#    return g
-#
-#
-#def rigid_corr(I, Im, x):
-#    # Computes normalized cross-correlation between a fixed and
-#    # a moving image transformed with a rigid transformation.
-#    # Input:
-#    # I - fixed image
-#    # Im - moving image
-#    # x - parameters of the rigid transform: the first element
-#    #     is the rotation angle and the remaining two elements
-#    #     are the translation
-#    # Output:
-#    # C - normalized cross-correlation between I and T(Im)
-#    # Im_t - transformed moving image T(Im)
-#
-#    SCALING = 100
-#
-#    # the first element is the rotation angle
-#    T = rotate(x[0])
-#
-#    # the remaining two element are the translation
-#    #
-#    # the gradient ascent/descent method work best when all parameters
-#    # of the function have approximately the same range of values
-#    # this is  not the case for the parameters of rigid registration
-#    # where the transformation matrix usually takes  much smaller
-#    # values compared to the translation vector this is why we pass a
-#    # scaled down version of the translation vector to this function
-#    # and then scale it up when computing the transformation matrix
-#    Th = util.t2h(T, x[1:]*SCALING)
-#
-#    # transform the moving image
-#    Im_t, Xt = image_transform(Im, Th)
-#
-#    # compute the similarity between the fixed and transformed
-#    # moving image
-#    C = correlation(I, Im_t)
-#
-#    return C, Im_t, Th
-#
-#
-#def affine_corr(I, Im, x):
-#    # Computes normalized cross-corrleation between a fixed and
-#    # a moving image transformed with an affine transformation.
-#    # Input:
-#    # I - fixed image
-#    # Im - moving image
-#    # x - parameters of the rigid transform: the first element
-#    #     is the roation angle, the second and third are the
-#    #     scaling parameters, the fourth and fifth are the
-#    #     shearing parameters and the remaining two elements
-#    #     are the translation
-#    # Output:
-#    # C - normalized cross-corrleation between I and T(Im)
-#    # Im_t - transformed moving image T(Im)
-#
-#    NUM_BINS = 64
-#    SCALING = 100
-#
-#    #------------------------------------------------------------------#
-#    # TODO: Implement the missing functionality
-#    #------------------------------------------------------------------#
-#
-#    return C, Im_t, Th
-#
-#
-#def affine_mi(I, Im, x):
-#    # Computes mutual information between a fixed and
-#    # a moving image transformed with an affine transformation.
-#    # Input:
-#    # I - fixed image
-#    # Im - moving image
-#    # x - parameters of the rigid transform: the first element
-#    #     is the rotation angle, the second and third are the
-#    #     scaling parameters, the fourth and fifth are the
-#    #     shearing parameters and the remaining two elements
-#    #     are the translation
-#    # Output:
-#    # MI - mutual information between I and T(Im)
-#    # Im_t - transformed moving image T(Im)
-#
-#    NUM_BINS = 64
-#    SCALING = 100
-#    
-#    #------------------------------------------------------------------#
-#    # TODO: Implement the missing functionality
-#    #------------------------------------------------------------------#
-#
-#    return MI, Im_t, Th
+def mutual_information_e(p):
+    # Compute the mutual information from a joint histogram.
+    # Alternative implementation via computation of entropy.
+    # Input:
+    # p - joint histogram
+    # Output:
+    # MI - mutual information in nat units
+    # a very small positive number
+
+    EPSILON = 10e-10
+
+    # add a small positive number to the joint histogram to avoid
+    # numerical problems (such as division by zero)
+    p += EPSILON
+
+    # we can compute the marginal histograms from the joint histogram
+    p_I = np.sum(p, axis=1)
+    p_I = p_I.reshape(-1, 1)
+    p_J = np.sum(p, axis=0)
+    p_J = p_J.reshape(1, -1)
+
+    #------------------------------------------------------------------#
+    ent_I = np.sum(-(p_I*np.log(np.abs(p_I))))
+    ent_J = np.sum(-(p_J*np.log(np.abs(p_J))))
+    ent_IJ = np.sum(-(p*np.log(np.abs(p))))
+    MI = ent_I + ent_J - ent_IJ
+    #------------------------------------------------------------------#
+
+    return MI
+
+# SECTION 4. Towards intensity-based image registration
+
+
+def ngradient(fun, x, h=1e-3):
+    # Computes the derivative of a function with numerical differentiation.
+    # Input:
+    # fun - function for which the gradient is computed
+    # x - vector of parameter values at which to compute the gradient
+    # h - a small positive number used in the finite difference formula
+    # Output:
+    # g - vector of partial derivatives (gradient) of fun
+
+    #------------------------------------------------------------------#
+    g = []
+    for i in range(0, len(x)):
+        X1 = []
+        X2 = []
+        for j in range(0,len(x)):
+            X1.append(x[j] + h/2 * (i==j))
+            X2.append(x[j] - h/2 * (i==j))
+        g.append(np.array((fun(X1)) - np.array(fun(X2))/h))
+    #------------------------------------------------------------------#
+
+    return g
+
+
+def rigid_corr(I, Im, x):
+    # Computes normalized cross-correlation between a fixed and
+    # a moving image transformed with a rigid transformation.
+    # Input:
+    # I - fixed image
+    # Im - moving image
+    # x - parameters of the rigid transform: the first element
+    #     is the rotation angle and the remaining two elements
+    #     are the translation
+    # Output:
+    # C - normalized cross-correlation between I and T(Im)
+    # Im_t - transformed moving image T(Im)
+
+    SCALING = 100
+
+    # the first element is the rotation angle
+    T = rotate(x[0])
+
+    # the remaining two element are the translation
+    #
+    # the gradient ascent/descent method work best when all parameters
+    # of the function have approximately the same range of values
+    # this is  not the case for the parameters of rigid registration
+    # where the transformation matrix usually takes  much smaller
+    # values compared to the translation vector this is why we pass a
+    # scaled down version of the translation vector to this function
+    # and then scale it up when computing the transformation matrix
+    Th = util.t2h(T, x[1:]*SCALING)
+
+    # transform the moving image
+    Im_t, Xt = image_transform(Im, Th)
+
+    # compute the similarity between the fixed and transformed
+    # moving image
+    C = correlation(I, Im_t)
+
+    return C, Im_t, Th
+
+
+def affine_corr(I, Im, x):
+    # Computes normalized cross-corrleation between a fixed and
+    # a moving image transformed with an affine transformation.
+    # Input:
+    # I - fixed image
+    # Im - moving image
+    # x - parameters of the rigid transform: the first element
+    #     is the roation angle, the second and third are the
+    #     scaling parameters, the fourth and fifth are the
+    #     shearing parameters and the remaining two elements
+    #     are the translation
+    # Output:
+    # C - normalized cross-corrleation between I and T(Im)
+    # Im_t - transformed moving image T(Im)
+
+    NUM_BINS = 64
+    SCALING = 100
+
+    #------------------------------------------------------------------#
+    rot = x[0]
+    sx,sy = x[1],x[2]
+    cx,cy = x[3],x[4]
+    transl = x[5:7]
+    
+    T_rot = rotate(rot)
+    T_scal = scale(sx,sy)
+    T_shear = shear(cx,cy)
+    
+    T = T_shear.dot(T_scal.dot(T_rot))
+    Th = util.t2h(T,transl*SCALING)
+    Im_t = Th.dot(Im)
+    C = correlation(I, Im_t)   
+    #------------------------------------------------------------------#
+
+    return C, Im_t, Th
+
+
+def affine_mi(I, Im, x):
+    # Computes mutual information between a fixed and
+    # a moving image transformed with an affine transformation.
+    # Input:
+    # I - fixed image
+    # Im - moving image
+    # x - parameters of the rigid transform: the first element
+    #     is the rotation angle, the second and third are the
+    #     scaling parameters, the fourth and fifth are the
+    #     shearing parameters and the remaining two elements
+    #     are the translation
+    # Output:
+    # MI - mutual information between I and T(Im)
+    # Im_t - transformed moving image T(Im)
+
+    NUM_BINS = 64
+    SCALING = 100
+    
+    #------------------------------------------------------------------#
+    rot = x[0]
+    sx,sy = x[1],x[2]
+    cx,cy = x[3],x[4]
+    transl = x[5:7]
+    
+    T_rot = rotate(rot)
+    T_scal = scale(sx,sy)
+    T_shear = shear(cx,cy)
+    
+    T = T_shear.dot(T_scal.dot(T_rot))
+    Th = util.t2h(T,transl*SCALING)
+    Im_t = Th.dot(Im)
+    
+    p = joint_histogram(I, Im_t, NUM_BINS, minmax_range=None)
+    MI = mutual_information(p)
+    #------------------------------------------------------------------#
+
+    return MI, Im_t, Th
